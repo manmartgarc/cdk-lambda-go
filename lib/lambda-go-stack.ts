@@ -1,16 +1,25 @@
+import { GoFunction } from '@aws-cdk/aws-lambda-go-alpha';
 import * as cdk from 'aws-cdk-lib';
+import { AttributeType, Table } from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export class LambdaGoStack extends cdk.Stack {
+  private readonly goFunc: GoFunction;
+  private readonly ddbTable: Table;
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
+    this.ddbTable = new Table(this, 'HelloGoTable', {
+      partitionKey: {name: 'Name', type: AttributeType.STRING}
+    });
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'LambdaGoQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    this.goFunc = new GoFunction(this, 'HelloGo', {
+      entry: 'go-lambda',
+      environment: {
+        'TABLE_NAME': this.ddbTable.tableName
+      }
+    });
+
+    this.ddbTable.grantReadWriteData(this.goFunc);
   }
 }
